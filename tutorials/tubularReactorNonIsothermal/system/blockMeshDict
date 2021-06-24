@@ -55,15 +55,15 @@ vertices
 
 );
 
-NX01  24;	//240
-NX12  18;	//180
-NX23  50;	//500
+NX01  240;	//240
+NX12  180;	//180
+NX23  500;	//500
 
 gradx01 1;
 gradx12 1;
 gradx23 1;
 
-NR     5;	// it was 30
+NR     30;	// it was 30
 
 gradr     1;
 gradrinv  1;
