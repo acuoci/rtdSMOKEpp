@@ -22,7 +22,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    rtdSMOKE++
+    rtdSimpleSMOKE++
 
 Description
     Solves transient transport equation for a passive tracer to estimate
@@ -33,6 +33,7 @@ Description
 #include "fvCFD.H"
 #include "fvOptions.H"
 #include "simpleControl.H"
+#include "buildGlobalBoundaryList.H"
 #include <vector>
 #include <iomanip>
 
@@ -64,11 +65,15 @@ double Moment2(const std::vector<double>& t, const std::vector<double>& E)
 
 int main(int argc, char *argv[])
 {
+    #include "postProcess.H"
+
     #include "setRootCaseLists.H"
     #include "createTime.H"
     #include "createMesh.H"
 
     simpleControl simple(mesh);
+ 
+    const wordList globalBoundaryList = buildGlobalBoundaryList(mesh);
 
     #include "createFields.H"
     #include "createRTD.H"
@@ -79,10 +84,10 @@ int main(int argc, char *argv[])
 
     while (simple.loop(runTime))
     {
-        Info<< "Time = " << runTime.timeName() << nl << endl;
+	Info << "Time = " << runTime.timeName() << nl << endl;
 
-        while (simple.correctNonOrthogonal())
-        {
+	while (simple.correctNonOrthogonal())
+	{
             fvScalarMatrix FEqn
             (
                 fvm::ddt(rho, F)
@@ -95,13 +100,16 @@ int main(int argc, char *argv[])
             FEqn.relax();
             fvOptions.constrain(FEqn);
             FEqn.solve();
-            fvOptions.correct(F);
+	    fvOptions.correct(F);
         }
-
-        runTime.write();
 
 	// Post-processing
 	#include "analyzeOutletPatches.H"
+
+        runTime.write();
+
+	// Write CPU time on the screen
+	Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s" << "  ClockTime = " << runTime.elapsedClockTime() << " s" << nl << endl;
     }
 
     

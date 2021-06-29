@@ -42,25 +42,27 @@ for (label i = 0; i<listOutletPatches.size();i++)
 Info << endl;
 
 // Create global variables
-scalar mInTot = 0.;
-scalar mOutTot = 0.;
-scalar FInMean = 0.;
-scalar FOutMean = 0.;
 std::vector<double> history_time;
 std::vector<double> history_F;
 std::vector<double> history_E;
 
+history_time.push_back(0.);
+history_F.push_back(0.);
+history_E.push_back(0.);
+
 // Open output file
-std::ofstream fRTD("RTD.out", std::ios::out);
-fRTD.setf(std::ios::scientific);
-fRTD << std::left << std::setw(16) << "time[s]";
-fRTD << std::left << std::setw(16) << "F[-]";
-fRTD << std::left << std::setw(16) << "E[1/s]";
-fRTD << std::left << std::setw(16) << "area[-]";
-fRTD << std::left << std::setw(16) << "tmean[s]";
-fRTD << std::left << std::setw(16) << "sigma2[s2]";
-fRTD << std::left << std::setw(16) << "Pe[-]";
-fRTD << std::endl;
+autoPtr<std::ofstream> fRTD;
+fRTD.reset(new std::ofstream("RTD.out", std::ios::out));
+fRTD().setf(std::ios::scientific);
+
+fRTD() << std::left << std::setw(16) << "time[s]";
+fRTD() << std::left << std::setw(16) << "F[-]";
+fRTD() << std::left << std::setw(16) << "E[1/s]";
+fRTD() << std::left << std::setw(16) << "area[-]";
+fRTD() << std::left << std::setw(16) << "tmean[s]";
+fRTD() << std::left << std::setw(16) << "sigma2[s2]";
+fRTD() << std::left << std::setw(16) << "Pe[-]";
+fRTD() << std::endl;
 
 // Evaluation of passive scalar diffusion
 if (diffusivity_from_fields == false)
@@ -106,19 +108,63 @@ if (diffusivity_from_fields == false)
 }
 else
 {
-	const volScalarField alpha_
+	IOobject header
 	(
-    		IOobject
-    		(
-        		"mix:alpha",
-        		runTime.timeName(),
-       		 	mesh,
-       	 		IOobject::MUST_READ,
-        		IOobject::AUTO_WRITE
-    		),
-    		mesh
+		"mix:alpha",
+		mesh.time().timeName(),
+		mesh,
+		IOobject::NO_READ
 	);
 
-	alpha = alpha_;
+	// Check if field exists and can be read
+	if (header.typeHeaderOk<volScalarField>(true))
+	{
+		const volScalarField alpha_
+		(
+    			IOobject
+    			(
+        			"mix:alpha",
+        			runTime.timeName(),
+       		 		mesh,
+       	 			IOobject::MUST_READ,
+        			IOobject::AUTO_WRITE
+    			),
+    			mesh
+		);
+
+		alpha = alpha_;
+	}
+	else
+	{
+
+		const volScalarField Cp
+		(
+    			IOobject
+    			(
+        			"mix:Cp",
+        			runTime.timeName(),
+       		 		mesh,
+       	 			IOobject::MUST_READ,
+        			IOobject::AUTO_WRITE
+    			),
+    			mesh
+		);
+
+		const volScalarField lambda
+		(
+    			IOobject
+    			(
+        			"mix:lambda",
+        			runTime.timeName(),
+       		 		mesh,
+       	 			IOobject::MUST_READ,
+        			IOobject::AUTO_WRITE
+    			),
+    			mesh
+		);
+
+		alpha = lambda/rho/Cp;
+	}
+	
 }
 
